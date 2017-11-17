@@ -15,10 +15,14 @@ export default class PhotoUpload extends React.Component {
   static propTypes = {
     containerStyle: PropTypes.object,
     photoPickerTitle: PropTypes.string,
+    cancelButtonTitle: PropTypes.string,
+    takePhotoButtonTitle: PropTypes.string,
+    chooseFromLibraryButtonTitle: PropTypes.string,
     height: PropTypes.number,
     width: PropTypes.number,
     format: PropTypes.string,
     quality: PropTypes.number,
+    rotation: PropTypes.number,
     onPhotoSelect: PropTypes.func // returns the base64 string of uploaded photo
   }
 
@@ -26,11 +30,15 @@ export default class PhotoUpload extends React.Component {
     height: this.props.height || 300,
     width: this.props.width || 300,
     format: this.props.format || 'JPEG',
-    quality: this.props.quality || 80
+    quality: this.props.quality || 80,
+    rotation: this.props.rotation || 0
   }
 
   options = {
-    title: this.props.pickerTitle || 'Select Photo',
+    title: this.props.photoPickerTitle || 'Select Photo',
+    cancelButtonTitle: this.props.cancelButtonTitle || 'Cancel',
+    takePhotoButtonTitle: this.props.takePhotoButtonTitle || 'Take Photo',
+    chooseFromLibraryButtonTitle: this.props.chooseFromLibraryButtonTitle || 'Choose from Library',
     storageOptions: {
       skipBackup: true,
       path: 'images'
@@ -52,8 +60,18 @@ export default class PhotoUpload extends React.Component {
         console.log('User tapped custom button: ', response.customButton)
         return
       }
+      
+      // fix camera rotation error
+      if(response.originalRotation && response.originalRotation != 0) {
+        this.setState({rotation:90});
+        if(response.originalRotation === 270){
+          this.setState({rotation:270});
+        }
+      } else {
+        this.setState({rotation:0});
+      }
 
-      let { height, width, quality, format } = this.state
+      let { height, width, quality, format, rotation } = this.state
 
       // resize image
       const resizedImageUri = await ImageResizer.createResizedImage(
@@ -61,7 +79,8 @@ export default class PhotoUpload extends React.Component {
         height,
         width,
         format,
-        quality
+        quality,
+        rotation
       )
       const filePath = Platform.OS === 'android' && resizedImageUri.uri.replace
         ? resizedImageUri.uri.replace('file:/data', '/data')
